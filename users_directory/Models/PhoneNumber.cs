@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace users_directory.Models
 {
@@ -17,6 +18,7 @@ namespace users_directory.Models
 
         [Required]
         public int PersonId { get; set; }
+        [JsonIgnore]
         public virtual User User { get; set; }
     }
     public enum PhoneType

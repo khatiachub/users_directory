@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
 using users_directory.Models;
 
@@ -12,6 +13,8 @@ namespace users_directory.DB
         public DbSet<PhoneNumber> PhoneNumbers { get; set; }
         public DbSet<PersonRelationship> PersonRelationships { get; set; }
         public DbSet<City> Cities { get; set; }
+       // public object User { get; internal set; }
+        //public object Users { get; internal set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -19,12 +22,6 @@ namespace users_directory.DB
                 .HasOne(p => p.User)
                 .WithMany(p => p.Relationships)
                 .HasForeignKey(p => p.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<PersonRelationship>()
-                .HasOne(p => p.RelatedPerson)
-                .WithMany()
-                .HasForeignKey(p => p.RelatedPersonId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PhoneNumber>()

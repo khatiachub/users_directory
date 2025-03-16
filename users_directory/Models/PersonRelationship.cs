@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System;
+using System.Text.Json.Serialization;
 
 namespace users_directory.Models
 {
@@ -8,17 +9,14 @@ namespace users_directory.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
         [EnumDataType(typeof(RelationshipType))]
         public RelationshipType Type { get; set; }
 
-        [Required]
         public int UserId { get; set; }
+        [JsonIgnore]
         public virtual User User { get; set; }
 
-        [Required]
-        public int RelatedPersonId { get; set; }
-        public virtual User RelatedPerson { get; set; }
+        public string RelatedPerson { get; set; }
     }
     public enum RelationshipType
     {
