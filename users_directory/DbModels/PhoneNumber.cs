@@ -23,8 +23,8 @@ namespace users_directory.Models
     }
     public enum PhoneType
     {
-        მობილური = 1,
-        ოფისის = 2,
-        სახლის = 3
+        მობილური,
+        ოფისის,
+        სახლის
     }
 }

@@ -20,8 +20,9 @@ namespace users_directory.Models
     }
     public enum RelationshipType
     {
-        კოლეგა = 1,
-        ნაცნობი = 2,
-        ნათესავი = 3
+        კოლეგა,
+        ნაცნობი,
+        ნათესავი
     }
+
 }

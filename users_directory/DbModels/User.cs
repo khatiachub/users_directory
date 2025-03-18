@@ -20,18 +20,20 @@ namespace users_directory.Models
         public Gender Gender { get; set; }
         public string PersonalNumber { get; set; }
         [DataType(DataType.Date)]
-        public DateTime BirthDate { get; set; }
+        public DateOnly BirthDate { get; set; }
         public int CityId { get; set; }
         public virtual City City { get; set; }
 
         public virtual List<PhoneNumber> PhoneNumbers { get; set; } = new();
 
-        public string PicturePath { get; set; }
+        public string ProfileImage { get; set; }
         public virtual List<PersonRelationship> Relationships { get; set; } = new();
     }
     public enum Gender
     {
-        ქალი = 1,
-        კაცი = 2
+        ქალი,
+        კაცი
     }
+  
+
 }

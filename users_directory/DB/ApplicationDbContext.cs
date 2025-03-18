@@ -35,6 +35,10 @@ namespace users_directory.DB
                .WithMany()
                .HasForeignKey(p => p.CityId)
                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<User>()
+               .HasIndex(u => u.PersonalNumber)
+               .IsUnique();
         }
     }
 }

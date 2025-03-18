@@ -1,14 +1,16 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using users_directory.Models;
+using System.Text.Json.Serialization;
+using Swashbuckle.AspNetCore.Annotations;
+using System.Globalization;
+using System.Text.Json;
 
 namespace users_directory.DTO
 {
     public class UserDto
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
         [Required]
         [StringLength(50, MinimumLength = 2)]
         [RegularExpression(@"^([ა-ჰ]+|[A-Za-z]+)$", ErrorMessage = "სახელი უნდა შეიცავდეს მხოლოდ ქართულ ან ლათინურ ასოებს.")]
@@ -19,20 +21,22 @@ namespace users_directory.DTO
         public string LastName { get; set; }
         [Required]
         [EnumDataType(typeof(Gender))]
+        [SwaggerSchema(Description = "Select gender from the list")]
         public Gender Gender { get; set; }
         [Required]
         [StringLength(11, MinimumLength = 11)]
         [RegularExpression(@"^\d{11}$", ErrorMessage = "პირადი ნომერი უნდა იყოს ზუსტად 11 ციფრი.")]
         public string PersonalNumber { get; set; }
         [Required]
-        [DataType(DataType.Date)]
-        [CustomValidation(typeof(User), nameof(ValidateBirthDate))]
-        public DateTime BirthDate { get; set; }
+        [SwaggerSchema(Format = "date")] 
+        public DateOnly BirthDate { get; set; }
         [Required]
         public int CityId { get; set; }
+        [Required]
         public virtual List<PhoneNumberDto> PhoneNumbers { get; set; } = new();
-
-        public string PicturePath { get; set; }
+        [Required]
+        public IFormFile ProfileImage { get; set; }
+        [Required]
         public virtual List<PersonRelationshipDto> Relationships { get; set; } = new();
 
         public static ValidationResult ValidateBirthDate(DateTime birthDate, ValidationContext context)
@@ -41,5 +45,7 @@ namespace users_directory.DTO
                 ? ValidationResult.Success
                 : new ValidationResult("მინიმუმ 18 წლის უნდა იყოს.");
         }
+       
     }
+
 }
