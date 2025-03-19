@@ -8,8 +8,7 @@ namespace users_directory.DTO
     {
         [Required]
         [EnumDataType(typeof(RelationshipType))]
-        [SwaggerSchema(Description = "დასაშვები მნიშვნელობები:კოლეგა, ნათესავი,ნაცნობი")]
-        public RelationshipType Type { get; set; }
+        public RelationshipType Type { get; set; } = RelationshipType.ნათესავი;
 
         [Required]
         public string RelatedPerson { get; set; }

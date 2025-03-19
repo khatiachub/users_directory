@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System;
 using users_directory.DTO;
 using users_directory.Models;
 using users_directory.Services;
@@ -37,7 +38,7 @@ namespace users_directory.Controllers
                     PersonalNumber = user.PersonalNumber,
                     BirthDate = user.BirthDate,
                     City = user.City.CityName,
-                    ProfileImage = user.ProfileImage.ToString(),
+                    ProfileImage = user.ProfileImage?.ToString(),
                     PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberDto
                     {
                         Type = p.Type,
@@ -79,7 +80,7 @@ namespace users_directory.Controllers
                     PersonalNumber = user.PersonalNumber,
                     BirthDate = user.BirthDate,
                     City = user.City.CityName,
-                    ProfileImage = user.ProfileImage.ToString(),
+                    ProfileImage = user.ProfileImage?.ToString(),
                     PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberDto
                     {
                         Type = p.Type,
@@ -100,15 +101,18 @@ namespace users_directory.Controllers
             }
         }
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromForm] UserDto userDto)
+        public async Task<IActionResult> CreateUser([FromBody] UserDto userDto)
         {
             if (userDto == null)
                 return BadRequest(new { message = "User data cannot be null." });
 
             if (string.IsNullOrWhiteSpace(userDto.FirstName) || string.IsNullOrWhiteSpace(userDto.LastName))
                 return BadRequest(new { message = "First name and last name are required." });
-
-            var Image = await _unitOfWork.Users.UploadProfileImage(userDto.ProfileImage);
+            var cityExists = await _unitOfWork.City.GetByIdAsync(userDto.CityId);
+            if (cityExists == null)
+            {
+                return BadRequest(new { message = $"City with ID {userDto.CityId} does not exist." });
+            }
 
             try
             {
@@ -120,7 +124,6 @@ namespace users_directory.Controllers
                     PersonalNumber = userDto.PersonalNumber,
                     BirthDate = userDto.BirthDate,
                     CityId = userDto.CityId,
-                    ProfileImage =Image.ToString(),
                     PhoneNumbers = userDto.PhoneNumbers.Select(p => new PhoneNumber
                     {
                         Type = p.Type,
@@ -144,8 +147,35 @@ namespace users_directory.Controllers
                 return StatusCode(500, new { message = "An error occurred while creating the user.", error = ex.Message });
             }
         }
+        [HttpPut("uploadImage/")]
+        public async Task<IActionResult> UploadImageForUser([FromForm] UploadImageDto UploadDto)
+        {
+            if (UploadDto.UserId <= 0)
+                return BadRequest(new { message = "Invalid user ID." });
+
+            if (UploadDto.ProfileImage == null)
+                return BadRequest(new { message = "User data cannot be null." });
+            try
+            {
+                var existingUser = await _unitOfWork.Users.GetByIdAsync(UploadDto.UserId);
+                string imagePath = await _unitOfWork.Users.UploadProfileImage(UploadDto.ProfileImage);
+
+                if (existingUser == null)
+                    return NotFound(new { message = $"User with ID {UploadDto.UserId} not found." });
+                existingUser.ProfileImage = imagePath;
+                _unitOfWork.Users.Update(existingUser);
+                await _unitOfWork.CompleteAsync();
+
+                return Ok(new { message = "User updated successfully." });
+            }
+
+            catch(Exception ex) {
+                return StatusCode(500, new { message = "An error occurred while updating the user.", error = ex.Message });
+
+            }
+        }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto userDto)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userDto)
         {
             if (id <= 0)
                 return BadRequest(new { message = "Invalid user ID." });
@@ -156,8 +186,12 @@ namespace users_directory.Controllers
             try
             {
                 var existingUser = await _unitOfWork.Users.GetByIdAsync(id);
-                if (existingUser == null)
-                    return NotFound(new { message = $"User with ID {id} not found." });
+                if (existingUser == null) return NotFound(new { message = $"User with ID {id} not found." });
+                var cityExists = await _unitOfWork.City.GetByIdAsync(userDto.CityId);
+                if (cityExists==null)
+                {
+                    return BadRequest(new { message = $"City with ID {userDto.CityId} does not exist." });
+                }
 
                 existingUser.FirstName = userDto.FirstName;
                 existingUser.LastName = userDto.LastName;
@@ -165,19 +199,16 @@ namespace users_directory.Controllers
                 existingUser.PersonalNumber = userDto.PersonalNumber;
                 existingUser.BirthDate = userDto.BirthDate;
                 existingUser.CityId = userDto.CityId;
-                existingUser.ProfileImage = userDto.ProfileImage.ToString();
-                existingUser.PhoneNumbers = userDto.PhoneNumbers.Select(p => new PhoneNumber
+                foreach (var existingPhone in existingUser.PhoneNumbers)
                 {
-                    Type = p.Type,
-                    Number = p.Number
-                }).ToList();
-                existingUser.Relationships = userDto.Relationships.Select(r => new PersonRelationship
-                {
-                    Type = r.Type,
-                    RelatedPerson = r.RelatedPerson
-                }).ToList();
+                    var updatedPhone = userDto.PhoneNumbers.FirstOrDefault(p => p.Type == existingPhone.Type);
+                    if (updatedPhone != null)
+                    {
+                        existingPhone.Number = updatedPhone.Number; 
+                    }
+                }
 
-                _unitOfWork.Users.Update(existingUser);
+                await  _unitOfWork.Users.Update(existingUser);
                 await _unitOfWork.CompleteAsync();
 
                 return Ok(new { message = "User updated successfully." });
@@ -195,13 +226,17 @@ namespace users_directory.Controllers
 
             try
             {
-                var user = await _unitOfWork.Users.GetByIdAsync(id);
-                if (user == null)
-                    return NotFound(new { message = $"User with ID {id} not found." });
-
-                _unitOfWork.Users.Delete(user);
-                await _unitOfWork.CompleteAsync();
-
+                var number=await _unitOfWork.PhoneNumbers.Delete(id);
+                var related=await _unitOfWork.Relationships.Delete(id);
+                var user= await _unitOfWork.Users.Delete(id);  
+                if(!user)
+                {
+                    return BadRequest(new { message = "Invalid user ID." });
+                }
+                if (related||number)
+                {
+                    await _unitOfWork.CompleteAsync();
+                }
                 return Ok(new { message = "User deleted successfully." });
             }
             catch (Exception ex)
@@ -209,7 +244,7 @@ namespace users_directory.Controllers
                 return StatusCode(500, new { message = "An error occurred while deleting the user.", error = ex.Message });
             }
         }
-
+       
         [HttpGet("searchByPersonalData/{firstname}/{lastname}/{personalnumber}")]
         public async Task<IActionResult> GetByPersonalNum(string firstname, string lastname, string personalnumber)
         {
@@ -253,7 +288,7 @@ namespace users_directory.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchUsers([FromQuery] UserGetDto searchFilter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> SearchUsers([FromQuery] UserSearchDto searchFilter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
@@ -302,6 +337,6 @@ namespace users_directory.Controllers
             }
         }
 
-
+       
     }
 }

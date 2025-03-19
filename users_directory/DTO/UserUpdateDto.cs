@@ -1,14 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using users_directory.Models;
-using System.Text.Json.Serialization;
-using Swashbuckle.AspNetCore.Annotations;
-using System.Globalization;
-using System.Text.Json;
 
 namespace users_directory.DTO
 {
-    public class UserDto
+    public class UserUpdateDto
     {
         [Required]
         [StringLength(50, MinimumLength = 2)]
@@ -26,23 +21,11 @@ namespace users_directory.DTO
         [RegularExpression(@"^\d{11}$", ErrorMessage = "პირადი ნომერი უნდა იყოს ზუსტად 11 ციფრი.")]
         public string PersonalNumber { get; set; }
         [Required]
-        [CustomValidation(typeof(UserDto), nameof(ValidateBirthDate))]
+        [CustomValidation(typeof(UserDto),nameof(UserDto.ValidateBirthDate))]
         public DateOnly BirthDate { get; set; }
         [Required]
         public int CityId { get; set; }
         public virtual List<PhoneNumberDto> PhoneNumbers { get; set; } = new();
-        public virtual List<PersonRelationshipDto> Relationships { get; set; } = new();
-
-        public static ValidationResult? ValidateBirthDate(DateOnly birthDate, ValidationContext context)
-        {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var minAllowedDate = today.AddYears(-18);
-
-            return birthDate <= minAllowedDate
-                ? ValidationResult.Success
-                : new ValidationResult("მინიმუმ 18 წლის უნდა იყოს.");
-        }
-
+        
     }
-
 }

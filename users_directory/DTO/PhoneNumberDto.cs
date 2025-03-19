@@ -9,8 +9,7 @@ namespace users_directory.DTO
     {
         [Required]
         [EnumDataType(typeof(PhoneType))]
-        [SwaggerSchema(Description = "დასაშვები მნიშვნელობები: მობილური, ოფისის, სახლის")]
-        public PhoneType Type { get; set; }
+        public PhoneType Type { get; set; } = PhoneType.მობილური;
         [Required]
         [StringLength(50, MinimumLength = 4)]
         public string Number { get; set; }

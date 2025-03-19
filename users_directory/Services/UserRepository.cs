@@ -37,7 +37,7 @@ namespace users_directory.Services
 
             return await query.ToListAsync();
         }
-        public async Task<(IEnumerable<User>, int)> SearchUsersAsync(UserGetDto? searchFilter, int page, int pageSize)
+        public async Task<(IEnumerable<User>, int)> SearchUsersAsync(UserSearchDto? searchFilter, int page, int pageSize)
         {
             var query = _context.People
                             .Include(u => u.PhoneNumbers)
@@ -61,19 +61,18 @@ namespace users_directory.Services
 
                 if (!string.IsNullOrWhiteSpace(searchFilter.City))
                     query = query.Where(u => u.City.CityName.Contains(searchFilter.City));
-                if (searchFilter.PhoneNumbers != null && searchFilter.PhoneNumbers.Any())
+
+                if (!string.IsNullOrWhiteSpace(searchFilter.PhoneNumber))
                 {
-                    var phoneNumbersToSearch = searchFilter.PhoneNumbers.Select(p => p.Number).ToList();
-                    query = query.Where(u => u.PhoneNumbers.Any(p => phoneNumbersToSearch.Contains(p.Number)));
+                    query = query.Where(u => u.PhoneNumbers.Any(p => searchFilter.PhoneNumber.Contains(p.Number)));
                 }
                 if (searchFilter.Gender != null)
                 {
                     query = query.Where(u => u.Gender == searchFilter.Gender);
                 }
-                if (searchFilter.Relationships!= null && searchFilter.Relationships.Any())
+                if (!string.IsNullOrWhiteSpace(searchFilter.RelatedPerson))
                 {
-                    var relatedToSearch = searchFilter.Relationships.Select(p => p.RelatedPerson).ToList();
-                    query = query.Where(u => u.Relationships.Any(p => relatedToSearch.Contains(p.RelatedPerson)));
+                    query = query.Where(u => u.Relationships.Any(p => searchFilter.RelatedPerson.Contains(p.RelatedPerson)));
                 }
 
             }
@@ -92,6 +91,20 @@ namespace users_directory.Services
                 .Include(u => u.Relationships)
                 .ToListAsync();
         }
+        public async Task<bool> Delete(int id)
+        {
+            var entity = await _context.People.FirstOrDefaultAsync(e => e.Id == id);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Entity with ID {id} not found.");
+                return false;
+            }
+
+            _context.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         public override async Task<User?> GetByIdAsync(int id)
         {
             return await _context.People
@@ -101,36 +114,34 @@ namespace users_directory.Services
                             .FirstOrDefaultAsync(u => u.Id == id);
         }
 
-        public async Task<string> UploadProfileImage(IFormFile profileImage)
+        public async Task<string> UploadProfileImage(IFormFile file)
         {
-            string profileImageFilename = "";
+            string savedPath = string.Empty;
+            string uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "Upload", "Files");
+
+            if (!Directory.Exists(uploadFolder))
+            {
+                Directory.CreateDirectory(uploadFolder);
+            }
+
             try
             {
-                if (profileImage != null)
+                string fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                string filePath = Path.Combine(uploadFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    var profileImageExtension = "." + profileImage.FileName.Split('.')[profileImage.FileName.Split('.').Length - 1];
-                    profileImageFilename = DateTime.Now.Ticks.ToString() + profileImageExtension;
-
-                    var profileImageFilepath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files");
-
-                    if (!Directory.Exists(profileImageFilepath))
-                    {
-                        Directory.CreateDirectory(profileImageFilepath);
-                    }
-
-                    var profileImageExactpath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files", profileImageFilename);
-                    using (var profileImageStream = new FileStream(profileImageExactpath, FileMode.Create))
-                    {
-                        await profileImage.CopyToAsync(profileImageStream);
-                    }
+                    await file.CopyToAsync(stream);
                 }
+
+                savedPath = Path.Combine("Upload", "Files", fileName);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                Console.WriteLine($"Error saving image: {ex.Message}");
             }
-            return (profileImageFilename);
-        }
 
+            return savedPath;
+        }
     }
 }

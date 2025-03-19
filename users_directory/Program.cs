@@ -2,12 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 using users_directory.DB;
 using users_directory.Middlewares;
 using users_directory.Models;
 using users_directory.NewFolder;
 using users_directory.Services;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,46 +19,21 @@ var localizationOptions = new RequestLocalizationOptions()
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
-// Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.EnableAnnotations();
-    options.MapType<DateOnly>(() => new OpenApiSchema
-    {
-        Type = "string",
-        Format = "date"
-    });
-    options.MapType<Gender>(() => new OpenApiSchema
-    {
-        Type = "string",
-        Enum = Enum.GetNames(typeof(Gender))
-            .Select(name => new OpenApiString(name))
-            .Cast<IOpenApiAny>()
-            .ToList()
-    });
-    options.MapType<PhoneType>(() => new OpenApiSchema
-    {
-        Type = "string",
-        Enum = Enum.GetNames(typeof(PhoneType))
-           .Select(name => new OpenApiString(name))
-           .Cast<IOpenApiAny>()
-           .ToList()
-    });
-    options.MapType<RelationshipType>(() => new OpenApiSchema
-    {
-        Type = "string",
-        Enum = Enum.GetNames(typeof(RelationshipType))
-           .Select(name => new OpenApiString(name))
-           .Cast<IOpenApiAny>()
-           .ToList()
-    });
+
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     options.IncludeXmlComments(xmlPath);
+
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
+    options.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -86,12 +63,16 @@ app.UseStaticFiles(new StaticFileOptions
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
+    });
+
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

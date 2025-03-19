@@ -26,13 +26,13 @@ namespace users_directory.Models
 
         public virtual List<PhoneNumber> PhoneNumbers { get; set; } = new();
 
-        public string ProfileImage { get; set; }
+        public string? ProfileImage { get; set; }
         public virtual List<PersonRelationship> Relationships { get; set; } = new();
     }
     public enum Gender
     {
-        ქალი,
-        კაცი
+        ქალი=0,
+        კაცი=1
     }
   
 

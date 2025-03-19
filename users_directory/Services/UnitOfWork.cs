@@ -4,18 +4,20 @@ using users_directory.Models;
 
 namespace users_directory.Services
 {
-    public class UnitOfWork:IUnitOfWork
+    public class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext _context;
         public IUserRepository Users { get; }
-       // public IRepository<PhoneNumber> PhoneNumbers { get; }
-       // public IRepository<PersonRelationship> Relationships { get; }
+        public IRelatedPersonRepository Relationships { get; }
+        public ICityRepository City {get;}
+        public IPhoneNumbersRepository PhoneNumbers { get; }
         public UnitOfWork(ApplicationDbContext context)
         {
             _context = context;
             Users = new UserRepository(_context);
-           // PhoneNumbers = new Repository<PhoneNumber>(context);
-           // Relationships = new Repository<PersonRelationship>(context);
+            Relationships = new RelatedPersonRepository(_context);
+            City=new CityRepository(_context);
+            PhoneNumbers = new PhoneNumbersRepository(_context);
         }
 
         public async Task<bool> CompleteAsync()
