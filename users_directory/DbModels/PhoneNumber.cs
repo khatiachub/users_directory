@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using users_directory.DbModels;
 
 namespace users_directory.Models
 {
@@ -12,8 +13,9 @@ namespace users_directory.Models
         public int Id { get; set; }
 
         [Required]
-        [EnumDataType(typeof(PhoneType))]
-        public PhoneType Type { get; set; }
+        public int TypeId { get; set; }
+        [JsonIgnore]
+        public virtual PhoneNumbersType NumberType { get; set; }
         [Required]
         [StringLength(50, MinimumLength = 4)]
         public string Number { get; set; }
@@ -23,10 +25,5 @@ namespace users_directory.Models
         [JsonIgnore]
         public virtual User User { get; set; }
     }
-    public enum PhoneType
-    {
-        მობილური,
-        ოფისის,
-        სახლის
-    }
+
 }

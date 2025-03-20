@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using users_directory.DbModels;
 using users_directory.DTO;
 
 
@@ -16,8 +17,9 @@ namespace users_directory.Models
         public string FirstName { get; set; }
     
         public string LastName { get; set; }
-        [EnumDataType(typeof(Gender))]
-        public Gender Gender { get; set; }
+        public int GenderId { get; set; }
+        public virtual GendersType Gender { get; set; }
+
         public string PersonalNumber { get; set; }
         [DataType(DataType.Date)]
         public DateOnly BirthDate { get; set; }
@@ -28,11 +30,6 @@ namespace users_directory.Models
 
         public string? ProfileImage { get; set; }
         public virtual List<PersonRelationship> Relationships { get; set; } = new();
-    }
-    public enum Gender
-    {
-        ქალი=0,
-        კაცი=1
     }
   
 

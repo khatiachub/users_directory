@@ -32,7 +32,7 @@ namespace users_directory.Controllers
             {
                 var user = new PersonRelationship
                 {
-                    Type = relationshipDto.Type,
+                    RelatedTypeId = relationshipDto.TypeId,
                     UserId = relationshipDto.UserId,
                     RelatedPerson = relationshipDto.RelatedPerson
                 };

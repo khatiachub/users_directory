@@ -19,8 +19,7 @@ namespace users_directory.DTO
         [RegularExpression(@"^([ა-ჰ]+|[A-Za-z]+)$", ErrorMessage = "გვარი უნდა შეიცავდეს მხოლოდ ქართულ ან ლათინურ ასოებს.")]
         public string LastName { get; set; }
         [Required]
-        [EnumDataType(typeof(Gender))]
-        public Gender Gender { get; set; } = Gender.ქალი;
+        public int GenderId { get; set; }
         [Required]
         [StringLength(11, MinimumLength = 11)]
         [RegularExpression(@"^\d{11}$", ErrorMessage = "პირადი ნომერი უნდა იყოს ზუსტად 11 ციფრი.")]

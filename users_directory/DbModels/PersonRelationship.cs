@@ -2,6 +2,7 @@
 using System;
 using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations.Schema;
+using users_directory.DbModels;
 
 namespace users_directory.Models
 {
@@ -11,8 +12,9 @@ namespace users_directory.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [EnumDataType(typeof(RelationshipType))]
-        public RelationshipType Type { get; set; }
+        public int RelatedTypeId { get; set; }
+        [JsonIgnore]
+        public virtual RelationshipType RelatedType { get; set; }
 
         public int UserId { get; set; }
         [JsonIgnore]
@@ -20,11 +22,4 @@ namespace users_directory.Models
 
         public string RelatedPerson { get; set; }
     }
-    public enum RelationshipType
-    {
-        კოლეგა,
-        ნაცნობი,
-        ნათესავი
-    }
-
 }

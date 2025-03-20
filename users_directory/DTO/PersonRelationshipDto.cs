@@ -7,8 +7,7 @@ namespace users_directory.DTO
     public class PersonRelationshipDto
     {
         [Required]
-        [EnumDataType(typeof(RelationshipType))]
-        public RelationshipType Type { get; set; } = RelationshipType.ნათესავი;
+        public int TypeId { get; set; }
 
         [Required]
         public string RelatedPerson { get; set; }

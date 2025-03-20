@@ -34,22 +34,23 @@ namespace users_directory.Controllers
                     Id = user.Id,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    Gender = user.Gender,
+                    Gender = user.Gender?.Gender,  
                     PersonalNumber = user.PersonalNumber,
                     BirthDate = user.BirthDate,
-                    City = user.City.CityName,
-                    ProfileImage = user.ProfileImage?.ToString(),
-                    PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberDto
+                    City = user.City?.CityName, 
+                    ProfileImage = user.ProfileImage?.ToString(), 
+                    PhoneNumbers = user.PhoneNumbers?.Select(p => new PhoneNumberGetDto
                     {
-                        Type = p.Type,
+                        Type = p.NumberType?.Type, 
                         Number = p.Number
-                    }).ToList(),
-                    Relationships = user.Relationships.Select(p => new PersonRelationshipDto
+                    }).ToList() ?? new List<PhoneNumberGetDto>(),  
+                    Relationships = user.Relationships?.Select(p => new RelationshipGetDto
                     {
-                        Type = p.Type,
+                        Type = p.RelatedType?.Type,  
                         RelatedPerson = p.RelatedPerson
-                    }).ToList()
+                    }).ToList() ?? new List<RelationshipGetDto>()  
                 }).ToList();
+
 
                 return Ok(userDtos);
             }
@@ -76,19 +77,19 @@ namespace users_directory.Controllers
                     Id = user.Id,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    Gender = user.Gender,
+                    Gender = user.Gender.Gender,
                     PersonalNumber = user.PersonalNumber,
                     BirthDate = user.BirthDate,
                     City = user.City.CityName,
                     ProfileImage = user.ProfileImage?.ToString(),
-                    PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberDto
+                    PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberGetDto
                     {
-                        Type = p.Type,
+                        Type = p.NumberType.Type,
                         Number = p.Number
                     }).ToList(),
-                    Relationships = user.Relationships.Select(p => new PersonRelationshipDto
+                    Relationships = user.Relationships.Select(p => new RelationshipGetDto
                     {
-                        Type = p.Type,
+                        Type = p.RelatedType.Type,
                         RelatedPerson = p.RelatedPerson
                     }).ToList()
                 };
@@ -120,19 +121,19 @@ namespace users_directory.Controllers
                 {
                     FirstName = userDto.FirstName,
                     LastName = userDto.LastName,
-                    Gender = userDto.Gender,
+                    GenderId = userDto.GenderId,
                     PersonalNumber = userDto.PersonalNumber,
                     BirthDate = userDto.BirthDate,
                     CityId = userDto.CityId,
                     PhoneNumbers = userDto.PhoneNumbers.Select(p => new PhoneNumber
                     {
-                        Type = p.Type,
+                        TypeId = p.TypeId,
                         Number = p.Number
                     }).ToList(),
 
                     Relationships = userDto.Relationships.Select(r => new PersonRelationship
                     {
-                        Type = r.Type,
+                        RelatedTypeId = r.TypeId,
                         RelatedPerson = r.RelatedPerson
                     }).ToList()
                 };
@@ -195,13 +196,13 @@ namespace users_directory.Controllers
 
                 existingUser.FirstName = userDto.FirstName;
                 existingUser.LastName = userDto.LastName;
-                existingUser.Gender = userDto.Gender;
+                existingUser.GenderId = userDto.GenderId;
                 existingUser.PersonalNumber = userDto.PersonalNumber;
                 existingUser.BirthDate = userDto.BirthDate;
                 existingUser.CityId = userDto.CityId;
                 foreach (var existingPhone in existingUser.PhoneNumbers)
                 {
-                    var updatedPhone = userDto.PhoneNumbers.FirstOrDefault(p => p.Type == existingPhone.Type);
+                    var updatedPhone = userDto.PhoneNumbers.FirstOrDefault(p => p.TypeId == existingPhone.TypeId);
                     if (updatedPhone != null)
                     {
                         existingPhone.Number = updatedPhone.Number; 
@@ -226,17 +227,15 @@ namespace users_directory.Controllers
 
             try
             {
-                var number=await _unitOfWork.PhoneNumbers.Delete(id);
-                var related=await _unitOfWork.Relationships.Delete(id);
+             
                 var user= await _unitOfWork.Users.Delete(id);  
                 if(!user)
                 {
                     return BadRequest(new { message = "Invalid user ID." });
                 }
-                if (related||number)
-                {
+                
                     await _unitOfWork.CompleteAsync();
-                }
+                
                 return Ok(new { message = "User deleted successfully." });
             }
             catch (Exception ex)
@@ -262,19 +261,19 @@ namespace users_directory.Controllers
                     Id = user.Id,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    Gender = user.Gender,
+                    Gender = user.Gender.Gender,
                     PersonalNumber = user.PersonalNumber,
                     BirthDate = user.BirthDate,
                     City = user.City.CityName,
                     ProfileImage = user.ProfileImage,
-                    PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberDto
+                    PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberGetDto
                     {
-                        Type = p.Type,
+                        Type = p.NumberType.Type,
                         Number = p.Number
                     }).ToList(),
-                    Relationships = user.Relationships.Select(p => new PersonRelationshipDto
+                    Relationships = user.Relationships.Select(p => new RelationshipGetDto
                     {
-                        Type = p.Type,
+                        Type = p.RelatedType.Type,
                         RelatedPerson = p.RelatedPerson
                     }).ToList()
                 });
@@ -304,19 +303,19 @@ namespace users_directory.Controllers
                     Id = user.Id,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    Gender = user.Gender,
+                    Gender = user.Gender.Gender,
                     PersonalNumber = user.PersonalNumber,
                     BirthDate = user.BirthDate,
                     City = user.City.CityName,
                     ProfileImage = user.ProfileImage,
-                    PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberDto
+                    PhoneNumbers = user.PhoneNumbers.Select(p => new PhoneNumberGetDto
                     {
-                        Type = p.Type,
+                        Type = p.NumberType.Type,
                         Number = p.Number
                     }).ToList(),
-                    Relationships = user.Relationships.Select(p => new PersonRelationshipDto
+                    Relationships = user.Relationships.Select(p => new RelationshipGetDto
                     {
-                        Type = p.Type,
+                        Type = p.RelatedType.Type,
                         RelatedPerson = p.RelatedPerson
                     }).ToList()
                 }).ToList();
@@ -336,7 +335,20 @@ namespace users_directory.Controllers
                 return StatusCode(500, new { message = "An error occurred while searching for users.", error = ex.Message });
             }
         }
+        [HttpGet("getReport/{id}")]
+        public async Task<ActionResult<IEnumerable<PersonReportDto>>> GetReport(int id)
+        {
+            try
+            {
+                var report = await _unitOfWork.Users.ReportRelatedPersons(id);
+                
+                return Ok(report);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while fetching users.", error = ex.Message });
+            }
+        }
 
-       
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using users_directory.DB;
 using users_directory.DTO;
@@ -18,9 +19,13 @@ namespace users_directory.Services
         public async Task<IEnumerable<User>> GetByPersonalNumAsync(string firstname, string lastname, string personalnumber)
         {
             var query = _context.People
-                .Include(u => u.PhoneNumbers)
-                .Include(u => u.City)
+                 .Include(u => u.City)
+                .Include(u => u.PhoneNumbers)  
+                .ThenInclude(p => p.NumberType)
                 .Include(u => u.Relationships)
+                .ThenInclude(p => p.RelatedType)
+                .Include(u => u.Gender)
+
                 .AsQueryable();
             if (!string.IsNullOrWhiteSpace(firstname))
             {
@@ -40,13 +45,18 @@ namespace users_directory.Services
         public async Task<(IEnumerable<User>, int)> SearchUsersAsync(UserSearchDto? searchFilter, int page, int pageSize)
         {
             var query = _context.People
-                            .Include(u => u.PhoneNumbers)
                             .Include(u => u.City)
-                            .Include(u => u.Relationships)
+                .Include(u => u.PhoneNumbers)
+                .ThenInclude(p => p.NumberType)
+                .Include(u => u.Relationships)
+                .ThenInclude(p => p.RelatedType)
+                .Include(u => u.Gender)
                             .AsQueryable();
 
             if (searchFilter != null)
             {
+                if (searchFilter.Id!=null)
+                    query = query.Where(u => u.Id==searchFilter.Id);
                 if (!string.IsNullOrWhiteSpace(searchFilter.FirstName))
                     query = query.Where(u => u.FirstName.Contains(searchFilter.FirstName));
 
@@ -66,11 +76,11 @@ namespace users_directory.Services
                 {
                     query = query.Where(u => u.PhoneNumbers.Any(p => searchFilter.PhoneNumber.Contains(p.Number)));
                 }
-                if (searchFilter.Gender != null)
+                if (searchFilter?.Gender != null)
                 {
-                    query = query.Where(u => u.Gender == searchFilter.Gender);
+                    query = query.Where(u => u.Gender.Gender==searchFilter.Gender);
                 }
-                if (!string.IsNullOrWhiteSpace(searchFilter.RelatedPerson))
+                if (!string.IsNullOrWhiteSpace(searchFilter?.RelatedPerson))
                 {
                     query = query.Where(u => u.Relationships.Any(p => searchFilter.RelatedPerson.Contains(p.RelatedPerson)));
                 }
@@ -86,9 +96,12 @@ namespace users_directory.Services
         public override async Task<IEnumerable<User>> GetAllAsync()
         {
             return await _context.People
-                .Include(u => u.PhoneNumbers)  
-                .Include(u => u.City)
+                 .Include(u => u.City)
+                .Include(u => u.PhoneNumbers)
+                .ThenInclude(p => p.NumberType)
                 .Include(u => u.Relationships)
+                .ThenInclude(p => p.RelatedType)
+                .Include(u => u.Gender)
                 .ToListAsync();
         }
         public async Task<bool> Delete(int id)
@@ -97,7 +110,6 @@ namespace users_directory.Services
             if (entity == null)
             {
                 throw new KeyNotFoundException($"Entity with ID {id} not found.");
-                return false;
             }
 
             _context.Remove(entity);
@@ -108,9 +120,12 @@ namespace users_directory.Services
         public override async Task<User?> GetByIdAsync(int id)
         {
             return await _context.People
-                            .Include(u => u.PhoneNumbers)
-                            .Include(u => u.City)
-                            .Include(u => u.Relationships)
+                             .Include(u => u.City)
+                .Include(u => u.PhoneNumbers)
+                .ThenInclude(p => p.NumberType)
+                .Include(u => u.Relationships)
+                .ThenInclude(p => p.RelatedType)
+                .Include(u => u.Gender)
                             .FirstOrDefaultAsync(u => u.Id == id);
         }
 
@@ -143,5 +158,32 @@ namespace users_directory.Services
 
             return savedPath;
         }
+        public async Task<IEnumerable<PersonReportDto>> ReportRelatedPersons(int id)
+        {
+            var report = await _context.PersonRelationships
+                .Where(r => r.UserId == id)
+                .Join(_context.People,
+                    r => r.UserId,
+                    u => u.Id,
+                    (r, u) => new { u.FirstName, u.LastName, r.RelatedType })
+                .GroupBy(x => new { x.FirstName, x.LastName, x.RelatedType.Type }) 
+                .Select(g => new PersonReportDto
+                {
+                    FirstName = g.Key.FirstName,
+                    LastName = g.Key.LastName,
+                    Type = g.Key.Type, 
+                    RelatedPersons = g.Count()
+                })
+                .ToListAsync();
+
+            if (report == null || !report.Any())
+            {
+                throw new KeyNotFoundException($"Entity with ID {id} not found.");
+            }
+
+            return report;
+        }
+
+
     }
 }
